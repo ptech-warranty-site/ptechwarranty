@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - P-Tech Warranty</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f6fa;
+    }
+    .dashboard-header {
+      background-color: #4b0082;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+    .dashboard-container {
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    .claim-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .claim-card h3 {
+      margin-top: 0;
+    }
+    .claim-card select {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .claim-card button {
+      background: #4b0082;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .claim-card button:hover {
+      background: #5a0dad;
+    }
+  </style>
+</head>
+<body>
+    <body>
+        <header class="site-header">
+          <div class="header-top">
+            <div class="logo">P-Tech Warranty</div>
+            <div class="hamburger" onclick="toggleMenu()">☰</div>
+          </div>
+      
+          <nav class="navbar" id="navbar">
+            <a href="index.html">Home</a>
+            <a href="warranty.html">Warranty Plan</a>
+            <a href="register.html">Register Warranty</a>
+            <a href="claim.html">Claim</a>
+            <a href="admin.html">Admin</a>
+            <a href="check.html">Warranty Checker</a>
+            <a href="services.html">Services</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="contact.html">Contact</a>
+          </nav>
+        </header> 
+  <section class="dashboard-header">
+    <h1>Admin Warranty Claim Dashboard</h1>
+    <p>Review and update claim statuses</p>
+  </section>
+
+  <section class="dashboard-container" id="claimsContainer">
+    <p>Loading claims...</p>
+  </section>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      updateDoc,
+      doc
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFynS9-iYS7GxTeCzq-QPi9HRJr4qIRzY",
+      authDomain: "ptech-warranty-website.firebaseapp.com",
+      projectId: "ptech-warranty-website",
+      storageBucket: "ptech-warranty-website.appspot.com",
+      messagingSenderId: "335295749830",
+      appId: "1:335295749830:web:2ba5d66219eb6f04d6c1c7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const container = document.getElementById("claimsContainer");
+
+    async function loadClaims() {
+      const snap = await getDocs(collection(db, "warranty_claims"));
+      container.innerHTML = "";
+
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+
+        const createdAt = data.createdAt?.seconds
+          ? new Date(data.createdAt.seconds * 1000).toLocaleString()
+          : "N/A";
+
+        const card = document.createElement("div");
+        card.className = "claim-card";
+        card.innerHTML = `
+          <h3>${data.fullName} (${data.deviceModel})</h3>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Phone:</strong> ${data.phone}</p>
+          <p><strong>Serial Number:</strong> ${data.serialNumber}</p>
+          <p><strong>Student ID:</strong> ${data.studentId || "N/A"}</p>
+          <p><strong>Issue:</strong> ${data.problemDescription}</p>
+          <p><strong>Submitted:</strong> ${createdAt}</p>
+          <p><strong>Status:</strong>
+            <select id="status-${id}">
+              <option value="Pending" ${data.status === "Pending" ? "selected" : ""}>Pending</option>
+              <option value="Under Review" ${data.status === "Under Review" ? "selected" : ""}>Under Review</option>
+              <option value="Approved" ${data.status === "Approved" ? "selected" : ""}>Approved</option>
+              <option value="Rejected" ${data.status === "Rejected" ? "selected" : ""}>Rejected</option>
+              <option value="Repaired" ${data.status === "Repaired" ? "selected" : ""}>Repaired</option>
+            </select>
+            <button onclick="updateStatus('${id}')">Update</button>
+          </p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    window.updateStatus = async function (id) {
+      const select = document.getElementById(`status-${id}`);
+      const newStatus = select.value;
+      try {
+        await updateDoc(doc(db, "warranty_claims", id), {
+          status: newStatus
+        });
+        alert("✅ Status updated");
+      } catch (err) {
+        alert("❌ Failed to update status");
+        console.error(err);
+      }
+    }
+
+    loadClaims();
+  </script>
+</body>
+</html>
